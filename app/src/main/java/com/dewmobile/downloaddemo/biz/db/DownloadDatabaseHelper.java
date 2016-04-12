@@ -23,8 +23,9 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
 
     public static int STATUS_PENDING = 0;
     public static int STATUS_DOWNLOADING = 1;
-    public static int STATUS_FINISHED = 2;
-    public static int STATUS_NET_ERROR = 3;
+    public static int STATUS_PAUSE = 2;
+    public static int STATUS_FINISHED = 3;
+    public static int STATUS_NET_ERROR = 4;
 
 
     private static int dbVersion = 1;
@@ -79,7 +80,7 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
         Cursor cursor = db.query(downloadTableName, null, COLUMN_DOWNLOAD_URL + "=?", new String[]{url}, null, null, null);
         if(cursor != null && cursor.getCount() > 0 ){
             cursor.moveToFirst();
-            return new DownloadBean(cursor);
+            return new DownloadBean(cursor, new DownloadColumnIndex(cursor));
         }
         cursor.close();
         return null;
@@ -99,23 +100,23 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
         return rowId >= 0;
     }
 
-    public boolean deleteDownload(int transferId){
-        return false;
+    public boolean deleteDownload(long transferId){
+        return getWritableDatabase().delete(downloadTableName, COLUMN_ID+"=?",new String[]{transferId+""}) > 0;
     }
 
-    public void updateValues(int downloadId, ContentValues values){
+    public void updateValues(long downloadId, ContentValues values){
         SQLiteDatabase db = getWritableDatabase();
         db.update(downloadTableName, values, COLUMN_ID+"=?", new String[]{downloadId+""});
 
     }
 
-    public void updateProgress(int downloadId, long currentSize){
+    public void updateProgress(long downloadId, long currentSize){
         ContentValues values = new ContentValues();
         values.put(COLUMN_CURRENT_SIZE, currentSize);
         updateValues(downloadId,values);
    }
 
-    public void updateTotal(int downloadId, long totalSize){
+    public void updateTotal(long downloadId, long totalSize){
         ContentValues values = new ContentValues();
         values.put(COLUMN_TOTAL_SIZE, totalSize);
         updateValues(downloadId,values);
@@ -128,5 +129,24 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
     //数据，id，下载的url，本地路径，网络类型，当前的下载状态,总长度，当前的长度
     //_id,url,localpath,networktype,downloadStatus,totalSize,currentSize
 
+    public static class DownloadColumnIndex {
+        public int indexId;
+        public int indexUrl;
+        public int indexLocalPath;
+        public int indexNetType;
+        public int indexStatus;
+        public int indexTotalSize;
+        public int indexCurrentSize;
 
+        public DownloadColumnIndex(Cursor cursor){
+            indexId = cursor.getColumnIndex(COLUMN_ID);
+            indexUrl = cursor.getColumnIndex(COLUMN_DOWNLOAD_URL);
+            indexLocalPath = cursor.getColumnIndex(COLUMN_LOCAL_PATH);
+            indexNetType = cursor.getColumnIndex(COLUMN_NET_TYPE);
+            indexStatus = cursor.getColumnIndex(COLUMN_STATUS);
+            indexTotalSize = cursor.getColumnIndex(COLUMN_TOTAL_SIZE);
+            indexCurrentSize = cursor.getColumnIndex(COLUMN_CURRENT_SIZE);
+        }
+
+    }
 }

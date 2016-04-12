@@ -11,11 +11,17 @@ import android.text.format.Formatter;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.dewmobile.downloaddemo.adapter.DownloadAdapter;
 import com.dewmobile.downloaddemo.biz.DownloadBroadHelper;
 import com.dewmobile.downloaddemo.biz.DownloadManager;
+import com.dewmobile.downloaddemo.biz.db.DownloadInfo;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -25,22 +31,23 @@ public class MainActivity extends AppCompatActivity {
 
     private final String TAG = this.getClass().getSimpleName();
 
-    @Bind(R.id.pb_progress)
-    ProgressBar mPbProgress;
-    @Bind(R.id.et_url)
-    EditText mEtUrl;
-    @Bind(R.id.bt_operation)
-    Button mBtOperation;
-    @Bind(R.id.tv_status)
-    TextView tvStatus;
-    @Bind(R.id.tv_progress)
-    TextView tvProgress;
+
+    private List<String> mDownloadInfoList;
+    private DownloadAdapter mDownloadAdapter;
+
+    private ListView mListView;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        ButterKnife.bind(this);
+        mListView = (ListView) findViewById(R.id.lv_content);
+        initUrlList();
+        mDownloadAdapter = new DownloadAdapter(this);
+        mDownloadAdapter.setList(mDownloadInfoList);
+        mListView.setAdapter(mDownloadAdapter);
         //register receiver
         IntentFilter filter = new IntentFilter();
         filter.addAction(DownloadBroadHelper.ACTION_DOWNLOAD_PROGRESS);
@@ -48,49 +55,28 @@ public class MainActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).registerReceiver(mDownloadReceiver, filter);
     }
 
+    private void initUrlList() {
+        mDownloadInfoList = new ArrayList<>();
+        mDownloadInfoList.add("https://d3fwkemdw8spx3.cloudfront.net/sqlite/SQLProSQLite.1.0.69.app.zip");
+        mDownloadInfoList.add("http://downloadb.dewmobile.net/centersrc/20160402/d5c22583c075c44ab72110a2eed846b2-085534.flv");
+    }
+
     private BroadcastReceiver mDownloadReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             if (action.equals(DownloadBroadHelper.ACTION_DOWNLOAD_PROGRESS)) {
+                DownloadInfo mDownloadInfo = (DownloadInfo) intent.getSerializableExtra(DownloadBroadHelper.EXTRA_FILE);
                 long current = intent.getLongExtra(DownloadBroadHelper.EXTRA_CURRENT, 0);
                 long total = intent.getLongExtra(DownloadBroadHelper.EXTRA_TOTAL, 0);
-                onProgressChangedImpl(current, total);
+                mDownloadAdapter.updateDownloadInfo(mDownloadInfo);
             } else if (action.equals(DownloadBroadHelper.ACTION_DOWNLOAD_STATUS)) {
+                DownloadInfo mDownloadInfo = (DownloadInfo) intent.getSerializableExtra(DownloadBroadHelper.EXTRA_FILE);
                 DownloadManager.DownloadStatus status = (DownloadManager.DownloadStatus) intent.getSerializableExtra(DownloadBroadHelper.EXTRA_STATUS);
-                onStatusChangedImpl(status);
+                mDownloadAdapter.updateDownloadInfo(mDownloadInfo);
             }
         }
     };
-
-    @OnClick(R.id.bt_operation)
-    public void onClick() {
-        String url = mEtUrl.getText().toString();
-        if (url != null) {
-//            DownloadManager.getInstance().downloadByNormal(url);
-            DownloadManager.getInstance().download(url);
-        }
-    }
-
-    private void onProgressChangedImpl(long current, long total) {
-        mPbProgress.setProgress((int) (current * 100 / total));
-        Log.e(TAG, "current:" + current + ",total:" + total);
-        tvProgress.setText(current*100/total+"%\n"+ Formatter.formatFileSize(this,current)+"/"+Formatter.formatFileSize(this,total));
-    }
-
-    private void onStatusChangedImpl(DownloadManager.DownloadStatus currentStatus) {
-        if (currentStatus == DownloadManager.DownloadStatus.INIT) {
-            tvStatus.setText("初始化");
-        } else if (currentStatus == DownloadManager.DownloadStatus.DOWNLOADING) {
-            tvStatus.setText("下载中");
-        } else if (currentStatus == DownloadManager.DownloadStatus.ERROR) {
-            tvStatus.setText("错误");
-        } else if (currentStatus == DownloadManager.DownloadStatus.PAUSE) {
-            tvStatus.setText("暂停");
-        } else if (currentStatus == DownloadManager.DownloadStatus.SUCCESS) {
-            tvStatus.setText("下载成功");
-        }
-    }
 
     @Override
     protected void onDestroy() {

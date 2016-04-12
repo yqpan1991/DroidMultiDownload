@@ -1,6 +1,7 @@
 package com.dewmobile.downloaddemo.biz.db;
 
 import android.database.Cursor;
+import android.text.TextUtils;
 
 import com.dewmobile.downloaddemo.biz.FileInfo;
 
@@ -16,8 +17,16 @@ public class DownloadBean {
     public long totalSize;
     public long currentSize;
 
-    public DownloadBean(Cursor cursor){
-
+    public DownloadBean(Cursor cursor, DownloadDatabaseHelper.DownloadColumnIndex columnIndex){
+        if(cursor != null){
+            id = cursor.getLong(columnIndex.indexId);
+            downloadUrl = cursor.getString(columnIndex.indexUrl);
+            localPath = cursor.getString(columnIndex.indexLocalPath);
+            netType = cursor.getInt(columnIndex.indexNetType);
+            status = cursor.getInt(columnIndex.indexStatus);
+            totalSize = cursor.getLong(columnIndex.indexTotalSize);
+            currentSize = cursor.getLong(columnIndex.indexCurrentSize);
+        }
     }
 
     public DownloadBean(){
@@ -30,7 +39,28 @@ public class DownloadBean {
         totalSize = fileInfo.fileSize;
     }
 
-    public boolean needStartAgain(){
-        return false;
+
+    @Override
+    public int hashCode() {
+        if(TextUtils.isEmpty(downloadUrl)){
+            return downloadUrl.hashCode();
+        }else{
+            return super.hashCode();
+        }
+    }
+
+    public boolean isDownloadSucceed(){
+        return status == DownloadDatabaseHelper.STATUS_FINISHED;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if(o instanceof DownloadBean){
+            DownloadBean compare = (DownloadBean) o;
+            if(!TextUtils.isEmpty(compare.downloadUrl) && !TextUtils.isEmpty(downloadUrl)){
+                return downloadUrl.equalsIgnoreCase(compare.downloadUrl);
+            }
+        }
+        return super.equals(o);
     }
 }

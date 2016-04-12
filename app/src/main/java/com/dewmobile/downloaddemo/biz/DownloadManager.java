@@ -1,31 +1,31 @@
 package com.dewmobile.downloaddemo.biz;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.text.TextUtils;
 
 import com.dewmobile.downloaddemo.MyApplication;
 import com.dewmobile.downloaddemo.biz.db.DownloadBean;
+import com.dewmobile.downloaddemo.biz.db.DownloadDatabaseHelper;
 import com.dewmobile.downloaddemo.biz.db.DownloadInfo;
-import com.dewmobile.downloaddemo.biz.db.DownloadTask3;
-
-import java.util.HashMap;
+import com.dewmobile.downloaddemo.biz.db.DownloadTask;
 
 /**
  * Created by panyongqiang on 16/3/31.
  */
 public class DownloadManager {
 
-    private HashMap<String,DownloadStatus> downloadStatusMap;
     private static DownloadManager mInstance;
     private Context mContext;
     private ThreadPoolManager threadPoolManager;
     private DownloadBroadHelper downloadBroadHelper;
+    private DownloadTaskManager mDownloadTaskManager;
 
     private DownloadManager(Context context){
-        downloadStatusMap = new HashMap<>();
         mContext = context;
         threadPoolManager = ThreadPoolManager.getInstance();
         downloadBroadHelper = new DownloadBroadHelper(mContext);
+        mDownloadTaskManager = new DownloadTaskManager(mDownloadCallback);
     }
 
     public static DownloadManager getInstance(){
@@ -38,18 +38,6 @@ public class DownloadManager {
         }
         return mInstance;
     }
-
-
-    public DownloadStatus getDownloadStatus(String url){
-        if(url == null){
-            return null;
-        }
-        if(downloadStatusMap.containsKey(url)){
-            return downloadStatusMap.get(url);
-        }
-        return DownloadStatus.INIT;
-    }
-
 
     public void download(String url){
         if(TextUtils.isEmpty(url)){
@@ -69,7 +57,7 @@ public class DownloadManager {
         FileInfo info = new FileInfo();
         info.url = url;
         info.localPath = mContext.getCacheDir()+"/"+ "123.zip";
-        DownloadTask task = new DownloadTask();
+        DownloadTask4 task = new DownloadTask4();
         task.downloadInfo = info;
         task.callback = callback;
         new Thread(task).start();*/
@@ -79,7 +67,7 @@ public class DownloadManager {
         if(TextUtils.isEmpty(url)){
             return;
         }
-        threadPoolManager.getPreDownloadThreadPool().execute(buildDownloadByNormal(url));
+        threadPoolManager.getPreDownloadThreadPool().execute(buildDownloadNormal(url));
     }
 
 
@@ -88,9 +76,6 @@ public class DownloadManager {
         Runnable runnable =  new InitDownloadInfoTask(mContext, url, new InitDownloadInfoTask.InitCallback() {
             @Override
             public void initSucceed(FileInfo fileInfo) {
-                //build download thread
-                //then download
-                //同样需要查询数据库的信息
                 DownloadTask2 downloadTask = new DownloadTask2();
                 downloadTask.downloadInfo = fileInfo;
                 downloadTask.run();
@@ -104,45 +89,87 @@ public class DownloadManager {
         return runnable;
     }
 
-    private Runnable buildDownloadByNormal(String url){
+    private Runnable buildDownloadNormal(String url){
         FileInfo fileInfo = new FileInfo();
         fileInfo.url = url;
         Runnable runnable = new InitDownloadInfoTask2(fileInfo, new InitDownloadInfoTask2.InitCallback(){
 
             @Override
             public void onNewDownloadRecord(DownloadBean bean) {
-                //callback new record
-                //then put it to download is ok
-                //对于请求的长度
-                //放置到线程的请求队列中
-
-                new DownloadTask3(new DownloadInfo(bean)).run();
+                mDownloadTaskManager.addDownload(new DownloadInfo(bean));
             }
 
             @Override
             public void onDownloadRecordExist(DownloadBean bean) {
-                //TODO -- check is downloading
-                //if is downloading,then do nothing
-                //else add new task is ok
-                //检查当前的状态,如果是非下载中,通知新重启线程即可
+                if(!bean.isDownloadSucceed()){
+                    mDownloadTaskManager.addDownload(new DownloadInfo(bean));
+                }
             }
 
             @Override
             public void onInitError(FileInfo fileInfo) {
-
+                //notify error
             }
         });
         return runnable;
     }
 
-    public void pause(String url){
-        //根据url，
-        //暂停的话，检测当前的下载是否在运行，如果在运行，那么将其暂停
+    public void pause(final DownloadInfo downloadInfo){
+        threadPoolManager.getPreDownloadThreadPool().execute(new Runnable() {
+            @Override
+            public void run() {
+                mDownloadTaskManager.pauseDownload(downloadInfo);
+            }
+        });
     }
 
     public DownloadBroadHelper getDownloadBroadHelper(){
         return downloadBroadHelper;
     }
+
+
+    private DownloadTask.DownloadCallback mDownloadCallback = new DownloadTask.DownloadCallback() {
+        @Override
+        public void onDownloadStart(DownloadTask downloadTask, DownloadInfo downloadInfo) {
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(DownloadDatabaseHelper.COLUMN_STATUS, DownloadDatabaseHelper.STATUS_DOWNLOADING);
+            DownloadDatabaseHelper.getInstance().updateValues(downloadInfo.id, contentValues);
+        }
+
+        @Override
+        public void onDownloadProgressUpdated(DownloadTask downloadTask, DownloadInfo downloadInfo) {
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(DownloadDatabaseHelper.COLUMN_CURRENT_SIZE, downloadInfo.currentSize);
+            contentValues.put(DownloadDatabaseHelper.COLUMN_TOTAL_SIZE, downloadInfo.totalSize);
+            DownloadDatabaseHelper.getInstance().updateValues(downloadInfo.id, contentValues);
+        }
+
+        @Override
+        public void onDownloadPaused(DownloadTask downloadTask, DownloadInfo downloadInfo) {
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(DownloadDatabaseHelper.COLUMN_STATUS, DownloadDatabaseHelper.STATUS_PAUSE);
+            DownloadDatabaseHelper.getInstance().updateValues(downloadInfo.id, contentValues);
+        }
+
+        @Override
+        public void onDownloadFailed(DownloadTask downloadTask, DownloadInfo downloadInfo) {
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(DownloadDatabaseHelper.COLUMN_STATUS, DownloadDatabaseHelper.STATUS_NET_ERROR);
+            DownloadDatabaseHelper.getInstance().updateValues(downloadInfo.id, contentValues);
+        }
+
+        @Override
+        public void onDownloadSucceed(DownloadTask downloadTask, DownloadInfo downloadInfo) {
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(DownloadDatabaseHelper.COLUMN_STATUS, DownloadDatabaseHelper.STATUS_FINISHED);
+            DownloadDatabaseHelper.getInstance().updateValues(downloadInfo.id, contentValues);
+        }
+
+        @Override
+        public void onDownloadCanceled(DownloadTask downloadTask, DownloadInfo downloadInfo) {
+            DownloadDatabaseHelper.getInstance().deleteDownload(downloadInfo.id);
+        }
+    };
 
     public enum DownloadStatus{
         INIT,//
