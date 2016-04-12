@@ -186,6 +186,7 @@ public class DownloadTask implements Runnable {
                 }
                 if (bos != null) {
                     try {
+                        bos.flush();
                         bos.close();
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -202,6 +203,7 @@ public class DownloadTask implements Runnable {
 
     private void checkFinish() {
         if (downloadInfo.currentSize == downloadInfo.totalSize && downloadInfo.currentSize != 0) {
+            downloadInfo.status = DownloadDatabaseHelper.STATUS_FINISHED;
             Log.e(TAG, "consume time:" + (System.currentTimeMillis() - startTime));
             downloadStatus = DownloadManager.DownloadStatus.SUCCESS;
             notifyStatusChanged();
@@ -217,10 +219,9 @@ public class DownloadTask implements Runnable {
     }
 
     private void addCompleteSize(long size) {
-        Log.e(TAG,"download size:"+size);
         if(size > 0){
             downloadInfo.currentSize += size;
-            if (System.currentTimeMillis() - lastReportTime > 1000) {
+            if (System.currentTimeMillis() - lastReportTime > 1000 || downloadInfo.currentSize == downloadInfo.totalSize) {
                 lastReportTime = System.currentTimeMillis();
                 notifyProgressChanged(downloadInfo.currentSize, downloadInfo.totalSize);
                 if (mDownloadCallback != null) {

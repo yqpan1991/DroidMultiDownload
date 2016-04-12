@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/DownloadDemo.iml" filepath="$PROJECT_DIR$/DownloadDemo.iml" />
       <module fileurl="file://$PROJECT_DIR$/DroidMultiDownload.iml" filepath="$PROJECT_DIR$/DroidMultiDownload.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>

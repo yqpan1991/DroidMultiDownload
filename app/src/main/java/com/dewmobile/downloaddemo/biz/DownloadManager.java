@@ -103,6 +103,8 @@ public class DownloadManager {
             public void onDownloadRecordExist(DownloadBean bean) {
                 if(!bean.isDownloadSucceed()){
                     mDownloadTaskManager.addDownload(new DownloadInfo(bean));
+                }else{
+                    DownloadManager.getInstance().getDownloadBroadHelper().notifyDownloadStatusChanged(new DownloadInfo(bean), DownloadStatus.SUCCESS);
                 }
             }
 

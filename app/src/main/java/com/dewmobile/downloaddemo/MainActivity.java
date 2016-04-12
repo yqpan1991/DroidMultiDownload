@@ -59,13 +59,15 @@ public class MainActivity extends AppCompatActivity {
         mDownloadInfoList = new ArrayList<>();
         mDownloadInfoList.add("https://d3fwkemdw8spx3.cloudfront.net/sqlite/SQLProSQLite.1.0.69.app.zip");
         mDownloadInfoList.add("http://downloadb.dewmobile.net/centersrc/20160402/d5c22583c075c44ab72110a2eed846b2-085534.flv");
+        mDownloadInfoList.add("http://xz.job391.com/down/Everything@89_1_1468.exe");
+        mDownloadInfoList.add("http://download.calibre-ebook.com/videos/grand-tour.mp4");
     }
 
     private BroadcastReceiver mDownloadReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            if (action.equals(DownloadBroadHelper.ACTION_DOWNLOAD_PROGRESS)) {
+                if (action.equals(DownloadBroadHelper.ACTION_DOWNLOAD_PROGRESS)) {
                 DownloadInfo mDownloadInfo = (DownloadInfo) intent.getSerializableExtra(DownloadBroadHelper.EXTRA_FILE);
                 long current = intent.getLongExtra(DownloadBroadHelper.EXTRA_CURRENT, 0);
                 long total = intent.getLongExtra(DownloadBroadHelper.EXTRA_TOTAL, 0);
