@@ -79,7 +79,7 @@ public class DownloadManager {
         if(TextUtils.isEmpty(url)){
             return;
         }
-        threadPoolManager.getPredownloadThreadPool().execute(buildDownloadByNormal(url));
+        threadPoolManager.getPreDownloadThreadPool().execute(buildDownloadByNormal(url));
     }
 
 
@@ -120,10 +120,11 @@ public class DownloadManager {
             }
 
             @Override
-            public void onDownloadRecordExist(FileInfo fileInfo) {
+            public void onDownloadRecordExist(DownloadBean bean) {
                 //TODO -- check is downloading
                 //if is downloading,then do nothing
                 //else add new task is ok
+                //检查当前的状态,如果是非下载中,通知新重启线程即可
             }
 
             @Override

@@ -8,7 +8,7 @@ import java.util.concurrent.Executors;
  */
 public class ThreadPoolManager {
     private Executor downloadThreadPool;
-    private Executor predownloadThreadPool;
+    private Executor preDownloadThreadPool;
 
     private static ThreadPoolManager instance;
 
@@ -25,14 +25,14 @@ public class ThreadPoolManager {
 
     private ThreadPoolManager(){
         downloadThreadPool = Executors.newFixedThreadPool(10);
-        predownloadThreadPool = Executors.newSingleThreadExecutor();
+        preDownloadThreadPool = Executors.newSingleThreadExecutor();
     }
     public Executor getDownloadThreadPool(){
         return downloadThreadPool;
     }
 
-    public Executor getPredownloadThreadPool(){
-        return predownloadThreadPool;
+    public Executor getPreDownloadThreadPool(){
+        return preDownloadThreadPool;
     }
 
 

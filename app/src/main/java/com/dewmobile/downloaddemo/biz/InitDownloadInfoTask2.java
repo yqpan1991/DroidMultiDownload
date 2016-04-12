@@ -32,7 +32,7 @@ public class InitDownloadInfoTask2  implements Runnable{
         DownloadDatabaseHelper databaseHelper = DownloadDatabaseHelper.getInstance();
         DownloadBean bean = databaseHelper.queryDownloadBean(mFileInfo.url);
         if(bean != null){
-            notifyOnDownloadRecordExist(mFileInfo);
+            notifyOnDownloadRecordExist(bean);
             return;
         }else{
             mFileInfo.generateLocalPath(MyApplication.getContext());
@@ -45,9 +45,9 @@ public class InitDownloadInfoTask2  implements Runnable{
         }
     }
 
-    private void notifyOnDownloadRecordExist(FileInfo fileInfo){
+    private void notifyOnDownloadRecordExist(DownloadBean bean){
         if(mInitCallback != null){
-            mInitCallback.onDownloadRecordExist(fileInfo);
+            mInitCallback.onDownloadRecordExist(bean);
         }
     }
     private void notifyOnInitError(FileInfo fileInfo){
@@ -64,7 +64,7 @@ public class InitDownloadInfoTask2  implements Runnable{
 
     public interface InitCallback{
         void onNewDownloadRecord(DownloadBean bean);
-        void onDownloadRecordExist(FileInfo fileInfo);
+        void onDownloadRecordExist(DownloadBean bean);
         void onInitError(FileInfo fileInfo);
     }
 
