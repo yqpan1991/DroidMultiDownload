@@ -23,6 +23,8 @@ public class DownloadTask implements Runnable {
 
     private final String TAG = this.getClass().getSimpleName();
 
+    private static final int BUFFER_SIZE = 1024 * 32;
+
     private DownloadManager.DownloadStatus downloadStatus;
     long lastReportTime = System.currentTimeMillis();
     private long startTime;
@@ -34,15 +36,15 @@ public class DownloadTask implements Runnable {
     private static final int CMD_PAUSE = 1;
     private static final int CMD_DELETE = 2;
 
-    public void pause(){
+    public void pause() {
         command = CMD_PAUSE;
     }
 
-    public void delete(){
+    public void delete() {
         command = CMD_DELETE;
     }
 
-    public boolean canDownload(){
+    public boolean canDownload() {
         return command == CMD_START;
     }
 
@@ -55,7 +57,7 @@ public class DownloadTask implements Runnable {
 
     @Override
     public void run() {
-        if(!canDownload()){
+        if (!canDownload()) {
             notifyCommandStatusIfNotRun();
             return;
         }
@@ -66,34 +68,34 @@ public class DownloadTask implements Runnable {
         if (file == null) {
             downloadStatus = DownloadManager.DownloadStatus.ERROR;
             notifyStatusChanged();
-            if(mDownloadCallback != null){
+            if (mDownloadCallback != null) {
                 mDownloadCallback.onDownloadFailed(this, downloadInfo);
             }
             return;
         }
         downloadStatus = DownloadManager.DownloadStatus.DOWNLOADING;
         notifyStatusChanged();
-        if(mDownloadCallback != null){
+        if (mDownloadCallback != null) {
             mDownloadCallback.onDownloadStart(this, downloadInfo);
         }
         new DownloadThread().run();
     }
 
     private void notifyCommandStatusIfNotRun() {
-        if(command == CMD_DELETE){
-            if(mDownloadCallback != null){
+        if (command == CMD_DELETE) {
+            if (mDownloadCallback != null) {
                 Log.e(TAG, "onDownloadCanceled");
                 mDownloadCallback.onDownloadCanceled(this, downloadInfo);
             }
-        }else if(command == CMD_PAUSE){
-            if(mDownloadCallback != null){
+        } else if (command == CMD_PAUSE) {
+            if (mDownloadCallback != null) {
                 Log.e(TAG, "onDownloadPaused");
                 mDownloadCallback.onDownloadPaused(this, downloadInfo);
             }
         }
     }
 
-    public DownloadInfo getDownloadInfo(){
+    public DownloadInfo getDownloadInfo() {
         return downloadInfo;
     }
 
@@ -134,25 +136,29 @@ public class DownloadTask implements Runnable {
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             }
+            if (url == null) {
+                setErrorAndNotify();
+                return;
+            }
             BufferedInputStream bis = null;
             BufferedOutputStream bos = null;
             try {
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setConnectTimeout(5000);
                 connection.setRequestMethod("GET");
-                connection.setRequestProperty("Content-type","application/octet-stream");
+                connection.setRequestProperty("Content-type", "application/octet-stream");
                 if (downloadInfo.currentSize != 0) {
                     connection.setRequestProperty("RANGE", "bytes=" + downloadInfo.currentSize + "-" + downloadInfo.totalSize);
                 }
                 if (connection.getResponseCode() == HttpURLConnection.HTTP_PARTIAL || connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                    downloadInfo.totalSize = downloadInfo.currentSize+connection.getContentLength();
+                    downloadInfo.totalSize = downloadInfo.currentSize + connection.getContentLength();
                     InputStream inputStream = connection.getInputStream();
-                    bis = new BufferedInputStream(inputStream, 1024*32);
-                    bos = new BufferedOutputStream(new FileOutputStream(new File(downloadInfo.localPath)), 1024*32);
+                    bis = new BufferedInputStream(inputStream, BUFFER_SIZE);
+                    bos = new BufferedOutputStream(new FileOutputStream(new File(downloadInfo.localPath)), BUFFER_SIZE);
                     int length = 0;
                     long tempBufferedSize = 0;
                     long startTime = System.currentTimeMillis();
-                    byte[] buffer = new byte[1024 * 32];
+                    byte[] buffer = new byte[BUFFER_SIZE];
                     while ((length = bis.read(buffer, 0, buffer.length)) != -1 && canDownload()) {
                         bos.write(buffer, 0, length);
                         tempBufferedSize += length;
@@ -166,17 +172,10 @@ public class DownloadTask implements Runnable {
                         addCompleteSize(tempBufferedSize);
                     }
                 } else {
-                    downloadStatus = DownloadManager.DownloadStatus.ERROR;
-                    notifyStatusChanged();
-                    if(mDownloadCallback != null){
-                        mDownloadCallback.onDownloadFailed(DownloadTask.this, downloadInfo);
-                    }
+                    setErrorAndNotify();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
-                if(mDownloadCallback != null){
-                    mDownloadCallback.onDownloadFailed(DownloadTask.this, downloadInfo);
-                }
+                setErrorAndNotify();
             } finally {
                 if (bis != null) {
                     try {
@@ -193,11 +192,19 @@ public class DownloadTask implements Runnable {
                     }
                 }
             }
-            if(!canDownload()){
+            if (!canDownload()) {
                 notifyCommandStatusIfNotRun();
-            }else{
+            } else {
                 checkFinish();
             }
+        }
+    }
+
+    private void setErrorAndNotify() {
+        downloadStatus = DownloadManager.DownloadStatus.ERROR;
+        notifyStatusChanged();
+        if (mDownloadCallback != null) {
+            mDownloadCallback.onDownloadFailed(DownloadTask.this, downloadInfo);
         }
     }
 
@@ -207,26 +214,26 @@ public class DownloadTask implements Runnable {
             Log.e(TAG, "consume time:" + (System.currentTimeMillis() - startTime));
             downloadStatus = DownloadManager.DownloadStatus.SUCCESS;
             notifyStatusChanged();
-            if(mDownloadCallback != null){
+            if (mDownloadCallback != null) {
                 mDownloadCallback.onDownloadSucceed(this, downloadInfo);
             }
         } else {
             Log.e(TAG, "finish:" + downloadInfo.currentSize + "," + downloadInfo.totalSize);
-            if(mDownloadCallback != null){
+            downloadStatus = DownloadManager.DownloadStatus.ERROR;
+            notifyStatusChanged();
+            if (mDownloadCallback != null) {
                 mDownloadCallback.onDownloadFailed(this, downloadInfo);
             }
         }
     }
 
     private void addCompleteSize(long size) {
-        if(size > 0){
+        if (size > 0) {
             downloadInfo.currentSize += size;
-            if (System.currentTimeMillis() - lastReportTime > 1000 || downloadInfo.currentSize == downloadInfo.totalSize) {
-                lastReportTime = System.currentTimeMillis();
-                notifyProgressChanged(downloadInfo.currentSize, downloadInfo.totalSize);
-                if (mDownloadCallback != null) {
-                    mDownloadCallback.onDownloadProgressUpdated(this, downloadInfo);
-                }
+            lastReportTime = System.currentTimeMillis();
+            notifyProgressChanged(downloadInfo.currentSize, downloadInfo.totalSize);
+            if (mDownloadCallback != null) {
+                mDownloadCallback.onDownloadProgressUpdated(this, downloadInfo);
             }
         }
     }
@@ -238,21 +245,26 @@ public class DownloadTask implements Runnable {
 
     @Override
     public boolean equals(Object o) {
-        if(o instanceof DownloadTask){
+        if (o instanceof DownloadTask) {
             DownloadTask compare = (DownloadTask) o;
             return compare.downloadInfo.equals(downloadInfo) && compare.command == command;
-        }else{
+        } else {
             return super.equals(o);
         }
     }
 
     //下载开始，下载更新，下载暂停，下载失败，下载成功, 继续
-    public interface DownloadCallback{
+    public interface DownloadCallback {
         void onDownloadStart(DownloadTask downloadTask, DownloadInfo downloadInfo);
+
         void onDownloadProgressUpdated(DownloadTask downloadTask, DownloadInfo downloadInfo);
+
         void onDownloadPaused(DownloadTask downloadTask, DownloadInfo downloadInfo);
+
         void onDownloadFailed(DownloadTask downloadTask, DownloadInfo downloadInfo);
+
         void onDownloadSucceed(DownloadTask downloadTask, DownloadInfo downloadInfo);
+
         void onDownloadCanceled(DownloadTask downloadTask, DownloadInfo downloadInfo);
     }
 
