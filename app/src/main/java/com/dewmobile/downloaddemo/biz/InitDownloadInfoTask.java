@@ -44,7 +44,8 @@ public class InitDownloadInfoTask implements Runnable {
         //
         fileInfo = new FileInfo();
         fileInfo.url = url;
-        fileInfo.generateLocalPath(MyApplication.getContext());
+        //TODO ------need to check from db , if current filePath is exist,if exist,then add -1
+        fileInfo.generateLocalPath();
         if (fileInfo.fileSize > 0) {
             //insert into database
             //init done

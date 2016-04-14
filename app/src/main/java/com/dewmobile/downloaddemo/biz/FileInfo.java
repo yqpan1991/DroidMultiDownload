@@ -4,21 +4,24 @@ import android.content.Context;
 import android.text.TextUtils;
 
 import com.dewmobile.downloaddemo.MyApplication;
+import com.edus.utils.StorageHelper;
 
+import java.io.File;
 import java.io.Serializable;
 
 /**
  * Created by panyongqiang on 16/3/31.
  */
-public class FileInfo implements Serializable{
+public class FileInfo implements Serializable {
 
     public String url;
     public String localPath;
     public long fileSize;//文件大小
 
-    public void generateLocalPath(Context context){
-        if(TextUtils.isEmpty(localPath)){
-            localPath = context.getCacheDir()+"/"+ url.substring(url.lastIndexOf("/")+1);
+    public void generateLocalPath() {
+        if (TextUtils.isEmpty(localPath)) {
+            localPath = StorageHelper.getInstance().getDownloadPath() + File.separator + url.substring(url.lastIndexOf("/") + 1);
+
         }
     }
 

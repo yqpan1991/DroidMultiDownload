@@ -35,7 +35,8 @@ public class InitDownloadInfoTask2  implements Runnable{
             notifyOnDownloadRecordExist(bean);
             return;
         }else{
-            mFileInfo.generateLocalPath(MyApplication.getContext());
+            //TODO ------need to check from db , if current filePath is exist,if exist,then add -1
+            mFileInfo.generateLocalPath();
             bean = new DownloadBean(mFileInfo);
             bean.netType = 0;
             bean.status = DownloadDatabaseHelper.STATUS_PENDING;
