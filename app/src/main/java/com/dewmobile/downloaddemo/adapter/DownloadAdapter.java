@@ -85,14 +85,14 @@ public class DownloadAdapter extends BaseAdapter {
             viewHolder.pbProgress = (ProgressBar) convertView.findViewById(R.id.pb_progress);
             viewHolder.tvProgress = (TextView) convertView.findViewById(R.id.tv_progress);
             viewHolder.tvStatus = (TextView) convertView.findViewById(R.id.tv_status);
-            viewHolder.etUrl = (EditText) convertView.findViewById(R.id.et_url);
+            viewHolder.tvUrl = (TextView) convertView.findViewById(R.id.tv_url);
             viewHolder.btDownload = (Button) convertView.findViewById(R.id.bt_download);
             viewHolder.btStop = (Button) convertView.findViewById(R.id.bt_stop);
             viewHolder.btOpen = (Button) convertView.findViewById(R.id.bt_open);
         }
         viewHolder = (ViewHolder) convertView.getTag();
         String url = getItem(position);
-        viewHolder.etUrl.setText(url);
+        viewHolder.tvUrl.setText(url);
         viewHolder.btOpen.setEnabled(false);
         if(mDownloadMap.containsKey(url)){
             final DownloadInfo downloadInfo = mDownloadMap.get(url);
@@ -108,19 +108,27 @@ public class DownloadAdapter extends BaseAdapter {
                             openFile(downloadInfo);
                         }
                     });
+                    viewHolder.tvStatus.setText("完成");
+                }else if(downloadInfo.status == DownloadDatabaseHelper.STATUS_NET_ERROR){
+                    viewHolder.tvStatus.setText("网络错误");
+                }else if(downloadInfo.status == DownloadDatabaseHelper.STATUS_DOWNLOADING){
+                    viewHolder.tvStatus.setText("下载中");
+                }else if(downloadInfo.status == DownloadDatabaseHelper.STATUS_PENDING) {
+                    viewHolder.tvStatus.setText("排队中");
+                }else if(downloadInfo.status == DownloadDatabaseHelper.STATUS_PAUSE){
+                    viewHolder.tvStatus.setText("暂停");
                 }
             }else{
                 viewHolder.tvProgress.setText("0");
                 viewHolder.pbProgress.setProgress(0);
+                viewHolder.tvStatus.setText("初始化中");
 
             }
-            //update info is ok
-
-
         }else{
             //normal info
             viewHolder.tvProgress.setText("null");
             viewHolder.pbProgress.setProgress(0);
+            viewHolder.tvStatus.setText("未下载");
         }
         viewHolder.btDownload.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -175,7 +183,7 @@ public class DownloadAdapter extends BaseAdapter {
         ProgressBar pbProgress;
         TextView tvProgress;
         TextView tvStatus;
-        EditText etUrl;
+        TextView tvUrl;
         Button btDownload;
         Button btStop;
         Button btOpen;

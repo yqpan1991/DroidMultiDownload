@@ -2,6 +2,7 @@ package com.edus.utils;
 
 import android.content.Context;
 import android.os.Environment;
+import android.util.Log;
 
 import com.dewmobile.downloaddemo.MyApplication;
 
@@ -53,9 +54,9 @@ public class StorageHelper {
         primaryPath = externalFilePath.getPath();
 //        Log.e(TAG, externalFilePath.getAbsolutePath());
         homePath = primaryPath+ FILE_SPLITTER + HOME;
-        initPath(homePath);
+        initPath(homePath + FILE_SPLITTER);
         downloadPath = homePath + FILE_SPLITTER+ DOWNLOAD;
-        initPath(downloadPath);
+        initPath(downloadPath + FILE_SPLITTER);
     }
 
     private void initPath(String path) {
