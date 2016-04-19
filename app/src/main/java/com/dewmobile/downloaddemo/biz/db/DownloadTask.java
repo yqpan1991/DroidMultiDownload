@@ -32,6 +32,9 @@ public class DownloadTask implements Runnable {
     private DownloadCallback mDownloadCallback;
     private int command;
 
+    private static final String TEMP_SUFFIX = ".es";
+    private String tempPath;
+
     private static final int CMD_START = 0;
     private static final int CMD_PAUSE = 1;
     private static final int CMD_DELETE = 2;
@@ -63,7 +66,7 @@ public class DownloadTask implements Runnable {
         }
 
         startTime = System.currentTimeMillis();
-
+        tempPath = downloadInfo.localPath + TEMP_SUFFIX;
         File file = checkGenerateFile();
         if (file == null) {
             downloadStatus = DownloadDatabaseHelper.STATUS_NORMAL_ERROR;
@@ -104,7 +107,7 @@ public class DownloadTask implements Runnable {
     }
 
     private File checkGenerateFile() {
-        File file = new File(downloadInfo.localPath);
+        File file = new File(tempPath);
         if (!file.exists()) {
             try {
                 file.createNewFile();
@@ -159,7 +162,7 @@ public class DownloadTask implements Runnable {
                     downloadInfo.totalSize = downloadInfo.currentSize + connection.getContentLength();
                     InputStream inputStream = connection.getInputStream();
                     bis = new BufferedInputStream(inputStream, BUFFER_SIZE);
-                    bos = new BufferedOutputStream(new FileOutputStream(new File(downloadInfo.localPath)), BUFFER_SIZE);
+                    bos = new BufferedOutputStream(new FileOutputStream(new File(tempPath)), BUFFER_SIZE);
                     int length = 0;
                     long tempBufferedSize = 0;
                     long startTime = System.currentTimeMillis();
@@ -217,6 +220,11 @@ public class DownloadTask implements Runnable {
         if (downloadInfo.currentSize == downloadInfo.totalSize && downloadInfo.currentSize != 0) {
             downloadInfo.status = DownloadDatabaseHelper.STATUS_FINISHED;
             Log.e(TAG, "consume time:" + (System.currentTimeMillis() - startTime));
+            //TODO 文件去除ed的后缀
+            if (tempPath.endsWith(TEMP_SUFFIX)) {
+                new File(tempPath).renameTo(new File(downloadInfo.localPath));
+
+            }
             downloadStatus = DownloadDatabaseHelper.STATUS_FINISHED;
             notifyStatusChanged();
             if (mDownloadCallback != null) {
