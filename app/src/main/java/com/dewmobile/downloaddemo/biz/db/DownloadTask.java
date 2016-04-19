@@ -25,7 +25,7 @@ public class DownloadTask implements Runnable {
 
     private static final int BUFFER_SIZE = 1024 * 32;
 
-    private DownloadManager.DownloadStatus downloadStatus;
+    private int downloadStatus;
     long lastReportTime = System.currentTimeMillis();
     private long startTime;
 
@@ -50,7 +50,7 @@ public class DownloadTask implements Runnable {
 
     public DownloadTask(DownloadInfo downloadInfo, DownloadCallback downloadCallback) {
         this.downloadInfo = downloadInfo;
-        downloadStatus = DownloadManager.DownloadStatus.WAITING;
+        downloadStatus = DownloadDatabaseHelper.STATUS_PENDING;
         mDownloadCallback = downloadCallback;
         command = CMD_START;
     }
@@ -66,14 +66,14 @@ public class DownloadTask implements Runnable {
 
         File file = checkGenerateFile();
         if (file == null) {
-            downloadStatus = DownloadManager.DownloadStatus.ERROR;
+            downloadStatus = DownloadDatabaseHelper.STATUS_NORMAL_ERROR;
             notifyStatusChanged();
             if (mDownloadCallback != null) {
                 mDownloadCallback.onDownloadFailed(this, downloadInfo);
             }
             return;
         }
-        downloadStatus = DownloadManager.DownloadStatus.DOWNLOADING;
+        downloadStatus = DownloadDatabaseHelper.STATUS_DOWNLOADING;
         notifyStatusChanged();
         if (mDownloadCallback != null) {
             mDownloadCallback.onDownloadStart(this, downloadInfo);
@@ -83,11 +83,15 @@ public class DownloadTask implements Runnable {
 
     private void notifyCommandStatusIfNotRun() {
         if (command == CMD_DELETE) {
+            Log.e(TAG, "onDownloadCanceled");
+            downloadStatus = DownloadDatabaseHelper.STATUS_CANCELED;
+            notifyStatusChanged();
             if (mDownloadCallback != null) {
-                Log.e(TAG, "onDownloadCanceled");
                 mDownloadCallback.onDownloadCanceled(this, downloadInfo);
             }
         } else if (command == CMD_PAUSE) {
+            downloadStatus = DownloadDatabaseHelper.STATUS_PAUSE;
+            notifyStatusChanged();
             if (mDownloadCallback != null) {
                 Log.e(TAG, "onDownloadPaused");
                 mDownloadCallback.onDownloadPaused(this, downloadInfo);
@@ -114,11 +118,12 @@ public class DownloadTask implements Runnable {
 
 
     protected void notifyStatusChanged() {
-        DownloadManager.getInstance().getDownloadBroadHelper().notifyDownloadStatusChanged(downloadInfo, downloadStatus);
+        downloadInfo.status = downloadStatus;
+        DownloadManager.getInstance().getDownloadBroadHelper().notifyDownloadStatusChanged(downloadInfo);
     }
 
     protected void notifyProgressChanged(long currentSize, long totalSize) {
-        DownloadManager.getInstance().getDownloadBroadHelper().notifyProgressChanged(downloadInfo, currentSize, totalSize);
+        DownloadManager.getInstance().getDownloadBroadHelper().notifyProgressChanged(downloadInfo);
     }
 
 
@@ -201,7 +206,7 @@ public class DownloadTask implements Runnable {
     }
 
     private void setErrorAndNotify() {
-        downloadStatus = DownloadManager.DownloadStatus.ERROR;
+        downloadStatus = DownloadDatabaseHelper.STATUS_NET_ERROR;
         notifyStatusChanged();
         if (mDownloadCallback != null) {
             mDownloadCallback.onDownloadFailed(DownloadTask.this, downloadInfo);
@@ -212,14 +217,14 @@ public class DownloadTask implements Runnable {
         if (downloadInfo.currentSize == downloadInfo.totalSize && downloadInfo.currentSize != 0) {
             downloadInfo.status = DownloadDatabaseHelper.STATUS_FINISHED;
             Log.e(TAG, "consume time:" + (System.currentTimeMillis() - startTime));
-            downloadStatus = DownloadManager.DownloadStatus.SUCCESS;
+            downloadStatus = DownloadDatabaseHelper.STATUS_FINISHED;
             notifyStatusChanged();
             if (mDownloadCallback != null) {
                 mDownloadCallback.onDownloadSucceed(this, downloadInfo);
             }
         } else {
             Log.e(TAG, "finish:" + downloadInfo.currentSize + "," + downloadInfo.totalSize);
-            downloadStatus = DownloadManager.DownloadStatus.ERROR;
+            downloadStatus = DownloadDatabaseHelper.STATUS_NORMAL_ERROR;
             notifyStatusChanged();
             if (mDownloadCallback != null) {
                 mDownloadCallback.onDownloadFailed(this, downloadInfo);

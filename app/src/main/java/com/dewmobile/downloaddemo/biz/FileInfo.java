@@ -21,7 +21,6 @@ public class FileInfo implements Serializable {
     public void generateLocalPath() {
         if (TextUtils.isEmpty(localPath)) {
             localPath = StorageHelper.getInstance().getDownloadPath() + File.separator + url.substring(url.lastIndexOf("/") + 1);
-
         }
     }
 

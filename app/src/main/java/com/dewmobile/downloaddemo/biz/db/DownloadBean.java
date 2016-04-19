@@ -63,4 +63,20 @@ public class DownloadBean {
         }
         return super.equals(o);
     }
+
+    public double getDownloadProgress(){
+        if(totalSize > 0){
+            return currentSize*1.0/totalSize;
+        }else{
+            return 0;
+        }
+    }
+
+    public double getDownloadPercent(){
+        return getDownloadProgress()*100;
+    }
+
+    public boolean isDownloadError(){
+        return status == DownloadDatabaseHelper.STATUS_NET_ERROR || status == DownloadDatabaseHelper.STATUS_NORMAL_ERROR;
+    }
 }

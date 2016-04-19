@@ -26,6 +26,8 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
     public static int STATUS_PAUSE = 2;
     public static int STATUS_FINISHED = 3;
     public static int STATUS_NET_ERROR = 4;
+    public static int STATUS_NORMAL_ERROR = 5;
+    public static int STATUS_CANCELED = 6;
 
 
     private static int dbVersion = 1;

@@ -70,12 +70,9 @@ public class MainActivity extends AppCompatActivity {
             String action = intent.getAction();
                 if (action.equals(DownloadBroadHelper.ACTION_DOWNLOAD_PROGRESS)) {
                 DownloadInfo mDownloadInfo = (DownloadInfo) intent.getSerializableExtra(DownloadBroadHelper.EXTRA_FILE);
-                long current = intent.getLongExtra(DownloadBroadHelper.EXTRA_CURRENT, 0);
-                long total = intent.getLongExtra(DownloadBroadHelper.EXTRA_TOTAL, 0);
                 mDownloadAdapter.updateDownloadInfo(mDownloadInfo);
             } else if (action.equals(DownloadBroadHelper.ACTION_DOWNLOAD_STATUS)) {
                 DownloadInfo mDownloadInfo = (DownloadInfo) intent.getSerializableExtra(DownloadBroadHelper.EXTRA_FILE);
-                DownloadManager.DownloadStatus status = (DownloadManager.DownloadStatus) intent.getSerializableExtra(DownloadBroadHelper.EXTRA_STATUS);
                 mDownloadAdapter.updateDownloadInfo(mDownloadInfo);
             }
         }

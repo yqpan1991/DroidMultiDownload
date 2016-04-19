@@ -26,19 +26,16 @@ public class DownloadBroadHelper {
         mLocalBroadcastManager = LocalBroadcastManager.getInstance(mContext);
     }
 
-    public void notifyProgressChanged(DownloadInfo fileInfo, long currentSize, long totalSize) {
+    public void notifyProgressChanged(DownloadInfo fileInfo) {
         Intent intent = new Intent(ACTION_DOWNLOAD_PROGRESS);
-        intent.putExtra(EXTRA_TOTAL, totalSize);
-        intent.putExtra(EXTRA_CURRENT, currentSize);
         if (fileInfo != null) {
             intent.putExtra(EXTRA_FILE, fileInfo);
         }
         mLocalBroadcastManager.sendBroadcast(intent);
     }
 
-    public void notifyDownloadStatusChanged(DownloadInfo fileInfo, DownloadManager.DownloadStatus downloadStatus) {
+    public void notifyDownloadStatusChanged(DownloadInfo fileInfo) {
         Intent intent = new Intent(ACTION_DOWNLOAD_STATUS);
-        intent.putExtra(EXTRA_STATUS, downloadStatus);
         if (fileInfo != null) {
             intent.putExtra(EXTRA_FILE, fileInfo);
         }

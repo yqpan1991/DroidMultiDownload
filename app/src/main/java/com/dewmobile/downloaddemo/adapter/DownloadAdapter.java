@@ -38,24 +38,24 @@ public class DownloadAdapter extends BaseAdapter {
     private List<String> mDataList = new ArrayList<>();
     private DownloadManager mDownloadManager;
 
-    private HashMap<String,DownloadInfo> mDownloadMap;
+    private HashMap<String, DownloadInfo> mDownloadMap;
 
-    public DownloadAdapter(Context context){
+    public DownloadAdapter(Context context) {
         mContext = context;
         mInflater = LayoutInflater.from(mContext);
         mDownloadManager = DownloadManager.getInstance();
         mDownloadMap = new HashMap<>();
     }
 
-    public void setList(List<String> list){
+    public void setList(List<String> list) {
         mDataList.clear();
-        if(list != null && !list.isEmpty()){
+        if (list != null && !list.isEmpty()) {
             mDataList.addAll(list);
         }
         notifyDataSetChanged();
     }
 
-    public void updateDownloadInfo(DownloadInfo downloadInfo){
+    public void updateDownloadInfo(DownloadInfo downloadInfo) {
         mDownloadMap.put(downloadInfo.downloadUrl, downloadInfo);
         notifyDataSetChanged();
     }
@@ -78,7 +78,7 @@ public class DownloadAdapter extends BaseAdapter {
     @Override
     public View getView(final int position, View convertView, ViewGroup parent) {
         ViewHolder viewHolder = null;
-        if(convertView == null){
+        if (convertView == null) {
             convertView = mInflater.inflate(R.layout.download_item, parent, false);
             viewHolder = new ViewHolder();
             convertView.setTag(viewHolder);
@@ -94,37 +94,30 @@ public class DownloadAdapter extends BaseAdapter {
         String url = getItem(position);
         viewHolder.tvUrl.setText(url);
         viewHolder.btOpen.setEnabled(false);
-        if(mDownloadMap.containsKey(url)){
+        if (mDownloadMap.containsKey(url)) {
             final DownloadInfo downloadInfo = mDownloadMap.get(url);
-            Log.e("DownloadAdapter", downloadInfo.status+"");
-            if(downloadInfo.totalSize != 0){
-                viewHolder.tvProgress.setText(downloadInfo.currentSize*100/downloadInfo.totalSize+"%\n"+ Formatter.formatFileSize(mContext,downloadInfo.currentSize)+"/"+ Formatter.formatFileSize(mContext,downloadInfo.totalSize));
-                viewHolder.pbProgress.setProgress((int) (downloadInfo.currentSize*100/downloadInfo.totalSize));
-                if(downloadInfo.status == DownloadDatabaseHelper.STATUS_FINISHED){
-                    viewHolder.btOpen.setEnabled(true);
-                    viewHolder.btOpen.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            openFile(downloadInfo);
-                        }
-                    });
-                    viewHolder.tvStatus.setText("完成");
-                }else if(downloadInfo.status == DownloadDatabaseHelper.STATUS_NET_ERROR){
-                    viewHolder.tvStatus.setText("网络错误");
-                }else if(downloadInfo.status == DownloadDatabaseHelper.STATUS_DOWNLOADING){
-                    viewHolder.tvStatus.setText("下载中");
-                }else if(downloadInfo.status == DownloadDatabaseHelper.STATUS_PENDING) {
-                    viewHolder.tvStatus.setText("排队中");
-                }else if(downloadInfo.status == DownloadDatabaseHelper.STATUS_PAUSE){
-                    viewHolder.tvStatus.setText("暂停");
-                }
-            }else{
-                viewHolder.tvProgress.setText("0");
-                viewHolder.pbProgress.setProgress(0);
-                viewHolder.tvStatus.setText("初始化中");
-
+            Log.e("DownloadAdapter", downloadInfo.status + "");
+            viewHolder.tvProgress.setText(downloadInfo.getDownloadPercent() + "%\n" + Formatter.formatFileSize(mContext, downloadInfo.currentSize) + "/" + Formatter.formatFileSize(mContext, downloadInfo.totalSize));
+            viewHolder.pbProgress.setProgress((int) (downloadInfo.getDownloadPercent()));
+            if (downloadInfo.status == DownloadDatabaseHelper.STATUS_FINISHED) {
+                viewHolder.btOpen.setEnabled(true);
+                viewHolder.btOpen.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        openFile(downloadInfo);
+                    }
+                });
+                viewHolder.tvStatus.setText("完成");
+            } else if (downloadInfo.isDownloadError()) {
+                viewHolder.tvStatus.setText("错误");
+            } else if (downloadInfo.status == DownloadDatabaseHelper.STATUS_DOWNLOADING) {
+                viewHolder.tvStatus.setText("下载中");
+            } else if (downloadInfo.status == DownloadDatabaseHelper.STATUS_PENDING) {
+                viewHolder.tvStatus.setText("排队中");
+            } else if (downloadInfo.status == DownloadDatabaseHelper.STATUS_PAUSE) {
+                viewHolder.tvStatus.setText("暂停");
             }
-        }else{
+        } else {
             //normal info
             viewHolder.tvProgress.setText("null");
             viewHolder.pbProgress.setProgress(0);
@@ -151,7 +144,7 @@ public class DownloadAdapter extends BaseAdapter {
         MimeTypeMap myMime = MimeTypeMap.getSingleton();
         Intent newIntent = new Intent(Intent.ACTION_VIEW);
         String mimeType = myMime.getMimeTypeFromExtension(fileExt((downloadInfo.downloadUrl)));
-        newIntent.setDataAndType(Uri.fromFile(new File(downloadInfo.localPath)),mimeType);
+        newIntent.setDataAndType(Uri.fromFile(new File(downloadInfo.localPath)), mimeType);
         newIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
             mContext.startActivity(newIntent);
@@ -179,7 +172,7 @@ public class DownloadAdapter extends BaseAdapter {
         }
     }
 
-    public static class ViewHolder{
+    public static class ViewHolder {
         ProgressBar pbProgress;
         TextView tvProgress;
         TextView tvStatus;

@@ -61,7 +61,7 @@ public class DownloadManager {
                 if(!bean.isDownloadSucceed()){
                     mDownloadTaskManager.addDownload(new DownloadInfo(bean));
                 }else{
-                    DownloadManager.getInstance().getDownloadBroadHelper().notifyDownloadStatusChanged(new DownloadInfo(bean), DownloadStatus.SUCCESS);
+                    DownloadManager.getInstance().getDownloadBroadHelper().notifyDownloadStatusChanged(new DownloadInfo(bean));
                 }
             }
 
@@ -129,18 +129,5 @@ public class DownloadManager {
             DownloadDatabaseHelper.getInstance().deleteDownload(downloadInfo.id);
         }
     };
-
-    public enum DownloadStatus{
-        INIT,//
-        INIT_NORMAL_ERROR,//can
-        INIT_FETAL_ERROR,
-        INIT_PAUSE,
-        WAITING,//start download
-        DOWNLOADING,//downloading
-        PAUSE,//pause
-        ERROR,//download error
-        SUCCESS,//下载成功
-    }
-
 
 }
