@@ -96,7 +96,7 @@ public class DownloadAdapter extends BaseAdapter {
         viewHolder.btOpen.setEnabled(false);
         if (mDownloadMap.containsKey(url)) {
             final DownloadInfo downloadInfo = mDownloadMap.get(url);
-            Log.e("DownloadAdapter", downloadInfo.status + "");
+//            Log.e("DownloadAdapter", downloadInfo.status + "");
             viewHolder.tvProgress.setText(downloadInfo.getDownloadPercent() + "%\n" + Formatter.formatFileSize(mContext, downloadInfo.currentSize) + "/" + Formatter.formatFileSize(mContext, downloadInfo.totalSize));
             viewHolder.pbProgress.setProgress((int) (downloadInfo.getDownloadPercent()));
             if (downloadInfo.status == DownloadDatabaseHelper.STATUS_FINISHED) {

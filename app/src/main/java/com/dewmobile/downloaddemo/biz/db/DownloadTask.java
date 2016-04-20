@@ -111,6 +111,7 @@ public class DownloadTask implements Runnable {
         if (!file.exists()) {
             try {
                 file.createNewFile();
+                file.isHidden();
             } catch (IOException e) {
                 e.printStackTrace();
                 return null;
@@ -162,7 +163,7 @@ public class DownloadTask implements Runnable {
                     downloadInfo.totalSize = downloadInfo.currentSize + connection.getContentLength();
                     InputStream inputStream = connection.getInputStream();
                     bis = new BufferedInputStream(inputStream, BUFFER_SIZE);
-                    bos = new BufferedOutputStream(new FileOutputStream(new File(tempPath)), BUFFER_SIZE);
+                    bos = new BufferedOutputStream(new FileOutputStream(new File(tempPath), true), BUFFER_SIZE);
                     int length = 0;
                     long tempBufferedSize = 0;
                     long startTime = System.currentTimeMillis();
