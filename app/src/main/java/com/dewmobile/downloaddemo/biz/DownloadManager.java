@@ -82,6 +82,15 @@ public class DownloadManager {
         });
     }
 
+    public void pause(final long id){
+        threadPoolManager.getPreDownloadThreadPool().execute(new Runnable() {
+            @Override
+            public void run() {
+                mDownloadTaskManager.pauseDownload(id);
+            }
+        });
+    }
+
     public DownloadBroadHelper getDownloadBroadHelper(){
         return downloadBroadHelper;
     }

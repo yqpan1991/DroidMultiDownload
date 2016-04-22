@@ -67,20 +67,21 @@ public class MainActivity extends AppCompatActivity {
     private BroadcastReceiver mDownloadReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
+/*            String action = intent.getAction();
                 if (action.equals(DownloadBroadHelper.ACTION_DOWNLOAD_PROGRESS)) {
                 DownloadInfo mDownloadInfo = (DownloadInfo) intent.getSerializableExtra(DownloadBroadHelper.EXTRA_FILE);
                 mDownloadAdapter.updateDownloadInfo(mDownloadInfo);
             } else if (action.equals(DownloadBroadHelper.ACTION_DOWNLOAD_STATUS)) {
                 DownloadInfo mDownloadInfo = (DownloadInfo) intent.getSerializableExtra(DownloadBroadHelper.EXTRA_FILE);
                 mDownloadAdapter.updateDownloadInfo(mDownloadInfo);
-            }
+            }*/
         }
     };
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        mDownloadAdapter.destroy();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mDownloadReceiver);
     }
 }

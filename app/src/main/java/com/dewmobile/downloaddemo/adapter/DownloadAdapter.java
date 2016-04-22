@@ -19,6 +19,7 @@ import android.widget.Toast;
 
 import com.dewmobile.downloaddemo.R;
 import com.dewmobile.downloaddemo.biz.DownloadManager;
+import com.dewmobile.downloaddemo.biz.cacher.DownloadUICacher;
 import com.dewmobile.downloaddemo.biz.db.DownloadDatabaseHelper;
 import com.dewmobile.downloaddemo.biz.db.DownloadInfo;
 
@@ -31,12 +32,13 @@ import java.util.List;
 /**
  * Created by panyongqiang on 16/4/12.
  */
-public class DownloadAdapter extends BaseAdapter {
+public class DownloadAdapter extends BaseAdapter implements DownloadUICacher.OnDownloadStatusChangedListener {
 
     private Context mContext;
     private LayoutInflater mInflater;
     private List<String> mDataList = new ArrayList<>();
     private DownloadManager mDownloadManager;
+    private DownloadUICacher mDownloadUICacher;
 
     private HashMap<String, DownloadInfo> mDownloadMap;
 
@@ -45,6 +47,7 @@ public class DownloadAdapter extends BaseAdapter {
         mInflater = LayoutInflater.from(mContext);
         mDownloadManager = DownloadManager.getInstance();
         mDownloadMap = new HashMap<>();
+        mDownloadUICacher = new DownloadUICacher(context, this);
     }
 
     public void setList(List<String> list) {
@@ -52,11 +55,6 @@ public class DownloadAdapter extends BaseAdapter {
         if (list != null && !list.isEmpty()) {
             mDataList.addAll(list);
         }
-        notifyDataSetChanged();
-    }
-
-    public void updateDownloadInfo(DownloadInfo downloadInfo) {
-        mDownloadMap.put(downloadInfo.downloadUrl, downloadInfo);
         notifyDataSetChanged();
     }
 
@@ -92,11 +90,38 @@ public class DownloadAdapter extends BaseAdapter {
         }
         viewHolder = (ViewHolder) convertView.getTag();
         String url = getItem(position);
+        viewHolder.url = url;
         viewHolder.tvUrl.setText(url);
         viewHolder.btOpen.setEnabled(false);
-        if (mDownloadMap.containsKey(url)) {
-            final DownloadInfo downloadInfo = mDownloadMap.get(url);
-//            Log.e("DownloadAdapter", downloadInfo.status + "");
+        DownloadUICacher.DownloadStatusInfo downloadStatusInfo = mDownloadUICacher.getDownloadStatusInfo(url, convertView, null);
+        if(downloadStatusInfo != null){
+            final DownloadInfo downloadInfo = downloadStatusInfo.downloadInfo;
+            updateDownloadStatus(viewHolder, downloadInfo, null);
+        }else{
+            updateDownloadStatus(viewHolder, null, null);
+
+        }
+        final ViewHolder finalViewHolder = viewHolder;
+        viewHolder.btDownload.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String url = getItem(position);
+                mDownloadManager.downloadByNormal(url);
+            }
+        });
+        viewHolder.btStop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String url = getItem(position);
+                mDownloadManager.pause(finalViewHolder.taskId);
+            }
+        });
+        return convertView;
+    }
+
+    private void updateDownloadStatus(ViewHolder viewHolder, final DownloadInfo downloadInfo, Object attachObject) {
+        if(downloadInfo != null){
+            viewHolder.taskId = downloadInfo.id;
             viewHolder.tvProgress.setText(downloadInfo.getDownloadPercent() + "%\n" + Formatter.formatFileSize(mContext, downloadInfo.currentSize) + "/" + Formatter.formatFileSize(mContext, downloadInfo.totalSize));
             viewHolder.pbProgress.setProgress((int) (downloadInfo.getDownloadPercent()));
             if (downloadInfo.status == DownloadDatabaseHelper.STATUS_FINISHED) {
@@ -117,27 +142,12 @@ public class DownloadAdapter extends BaseAdapter {
             } else if (downloadInfo.status == DownloadDatabaseHelper.STATUS_PAUSE) {
                 viewHolder.tvStatus.setText("暂停");
             }
-        } else {
-            //normal info
+        }else{
+            viewHolder.taskId = -1;
             viewHolder.tvProgress.setText("null");
             viewHolder.pbProgress.setProgress(0);
             viewHolder.tvStatus.setText("未下载");
         }
-        viewHolder.btDownload.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String url = getItem(position);
-                mDownloadManager.downloadByNormal(url);
-            }
-        });
-        viewHolder.btStop.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String url = getItem(position);
-                mDownloadManager.pause(mDownloadMap.get(url));
-            }
-        });
-        return convertView;
     }
 
     private void openFile(DownloadInfo downloadInfo) {
@@ -172,6 +182,18 @@ public class DownloadAdapter extends BaseAdapter {
         }
     }
 
+    @Override
+    public void onDownloadStatusChanged(String url, DownloadInfo downloadInfo, View attachView, Object attachObject) {
+        ViewHolder viewHolder = (ViewHolder) attachView.getTag();
+        if(viewHolder.url.equals(url)){
+            updateDownloadStatus(viewHolder, downloadInfo, attachObject);
+        }
+    }
+
+    public void destroy(){
+        mDownloadUICacher.destroy();
+    }
+
     public static class ViewHolder {
         ProgressBar pbProgress;
         TextView tvProgress;
@@ -180,5 +202,7 @@ public class DownloadAdapter extends BaseAdapter {
         Button btDownload;
         Button btStop;
         Button btOpen;
+        String url;
+        long taskId;
     }
 }

@@ -46,6 +46,15 @@ public class DownloadTaskManager {
         }
     }
 
+    public void pauseDownload(long id){
+        for(DownloadTask task : mRunningList){
+            if(task.getDownloadInfo().id == id){
+                task.pause();
+                return;
+            }
+        }
+    }
+
     public void deleteDownload(DownloadInfo downloadInfo){
         for(DownloadTask task : mRunningList){
             if(task.getDownloadInfo().equals(downloadInfo)){
