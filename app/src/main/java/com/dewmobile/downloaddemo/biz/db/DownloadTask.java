@@ -1,8 +1,10 @@
 package com.dewmobile.downloaddemo.biz.db;
 
 import android.util.Log;
+import android.webkit.URLUtil;
 
 import com.dewmobile.downloaddemo.biz.DownloadManager;
+import com.edus.utils.UrlUtils;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -141,7 +143,7 @@ public class DownloadTask implements Runnable {
         public void run() {
             URL url = null;
             try {
-                url = new URL(downloadInfo.downloadUrl);
+                url = new URL(UrlUtils.getEncodedUrl(downloadInfo.downloadUrl));
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             }
