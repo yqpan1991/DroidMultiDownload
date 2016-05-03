@@ -1,8 +1,10 @@
 package com.dewmobile.downloaddemo.biz.db;
 
+import android.content.Context;
+import android.os.PowerManager;
 import android.util.Log;
-import android.webkit.URLUtil;
 
+import com.dewmobile.downloaddemo.MyApplication;
 import com.dewmobile.downloaddemo.biz.DownloadManager;
 import com.edus.utils.UrlUtils;
 
@@ -18,8 +20,12 @@ import java.net.URL;
 
 /**
  * Created by panyongqiang on 16/3/31.
+ * 执行当前的任务时,使用wake_lock
+ * 任务结束时,释放wake_lock
  */
 public class DownloadTask implements Runnable {
+
+    private static final String WAKE_LOCK_TAG = "DownloadTask";
 
     private DownloadInfo downloadInfo;
 
@@ -36,6 +42,7 @@ public class DownloadTask implements Runnable {
 
     private static final String TEMP_SUFFIX = ".es";
     private String tempPath;
+    private PowerManager.WakeLock mWakeLock;
 
     private static final int CMD_START = 0;
     private static final int CMD_PAUSE = 1;
@@ -62,8 +69,10 @@ public class DownloadTask implements Runnable {
 
     @Override
     public void run() {
+        acquireWakeLock();
         if (!canDownload()) {
             notifyCommandStatusIfNotRun();
+            releaseWakeLock();
             return;
         }
 
@@ -76,6 +85,7 @@ public class DownloadTask implements Runnable {
             if (mDownloadCallback != null) {
                 mDownloadCallback.onDownloadFailed(this, downloadInfo);
             }
+            releaseWakeLock();
             return;
         }
         downloadStatus = DownloadDatabaseHelper.STATUS_DOWNLOADING;
@@ -208,6 +218,7 @@ public class DownloadTask implements Runnable {
             } else {
                 checkFinish();
             }
+            releaseWakeLock();
         }
     }
 
@@ -251,6 +262,20 @@ public class DownloadTask implements Runnable {
             if (mDownloadCallback != null) {
                 mDownloadCallback.onDownloadProgressUpdated(this, downloadInfo);
             }
+        }
+    }
+
+    private void acquireWakeLock(){
+        if(mWakeLock == null){
+            PowerManager pm = (PowerManager) MyApplication.getContext().getSystemService(Context.POWER_SERVICE);
+            mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG);
+            mWakeLock.acquire();
+        }
+    }
+
+    private void releaseWakeLock(){
+        if(mWakeLock != null){
+            mWakeLock.release();
         }
     }
 
