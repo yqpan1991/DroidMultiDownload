@@ -159,6 +159,7 @@ public class DownloadTask implements Runnable {
             }
             if (url == null) {
                 setErrorAndNotify();
+                releaseWakeLock();
                 return;
             }
             BufferedInputStream bis = null;
