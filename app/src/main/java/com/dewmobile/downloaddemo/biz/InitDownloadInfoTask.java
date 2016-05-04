@@ -7,6 +7,9 @@ import android.text.TextUtils;
 import com.dewmobile.downloaddemo.MyApplication;
 import com.dewmobile.downloaddemo.biz.db.DownloadBean;
 import com.dewmobile.downloaddemo.biz.db.DownloadDatabaseHelper;
+import com.edus.utils.StorageHelper;
+
+import java.io.File;
 
 /**
  * 初始化下载的信息
@@ -44,8 +47,7 @@ public class InitDownloadInfoTask implements Runnable{
         if(bean != null){
             notifyOnDownloadRecordExist(bean);
         }else{
-            //TODO ------need to check from db , if current filePath is exist,if exist,then add -1
-            mFileInfo.generateLocalPath();
+            mFileInfo.localPath = generateNoneConflictPath(mFileInfo.url);
             bean = new DownloadBean(mFileInfo);
             bean.netType = 0;
             bean.status = DownloadDatabaseHelper.STATUS_PENDING;
@@ -89,6 +91,35 @@ public class InitDownloadInfoTask implements Runnable{
         if(mWakeLock != null){
             mWakeLock.release();
         }
+    }
+
+    private String generateNoneConflictPath(String url){
+        //暂时不支持设置文件的名字,自动截取即可
+        //panda.mp3
+        String title = url.substring(url.lastIndexOf("/") + 1);
+        String name = title;
+        String suffix = "";
+        if(name.contains(".")){
+            name = name.substring(0, name.lastIndexOf("."));
+            suffix = title.substring(name.length());
+        }
+        String localPath = StorageHelper.getInstance().getDownloadPath() + File.separator  + name + suffix;
+        int index = 1;
+        while(checkPathConflict(localPath)){
+            localPath = StorageHelper.getInstance().getDownloadPath() + File.separator  + name +"-" + index + suffix;//panda-n.mp3
+            index++;
+        }
+        return localPath;
+    }
+
+    private boolean checkPathConflict(String path){
+        //1. 需要检查数据库是否存在这个信息
+        //2. 检查这个路径的文件是否已经存在
+        if(new File(path).exists()){
+            return true;
+        }
+        DownloadDatabaseHelper databaseHelper = DownloadDatabaseHelper.getInstance();
+        return databaseHelper.queryDownloadPathExist(path);
     }
 
 }

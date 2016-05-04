@@ -5,6 +5,9 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.text.TextUtils;
+import android.text.style.TextAppearanceSpan;
+import android.view.TextureView;
 
 import com.dewmobile.downloaddemo.MyApplication;
 
@@ -80,12 +83,33 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
     public DownloadBean queryDownloadBean(String url){
         SQLiteDatabase db = getReadableDatabase();
         Cursor cursor = db.query(downloadTableName, null, COLUMN_DOWNLOAD_URL + "=?", new String[]{url}, null, null, null);
-        if(cursor != null && cursor.getCount() > 0 ){
-            cursor.moveToFirst();
-            return new DownloadBean(cursor, new DownloadColumnIndex(cursor));
+        try{
+            if(cursor != null && cursor.getCount() > 0 ){
+                cursor.moveToFirst();
+                return new DownloadBean(cursor, new DownloadColumnIndex(cursor));
+            }
+        }finally {
+            if(cursor != null){
+                cursor.close();
+            }
         }
-        cursor.close();
         return null;
+    }
+
+    public boolean queryDownloadPathExist(String path){
+        if(TextUtils.isEmpty(path)){
+            return false;
+        }
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.query(downloadTableName, null, COLUMN_LOCAL_PATH + "=?", new String[]{path}, null, null, null);
+        try{
+            return cursor != null && cursor.getCount()  > 0;
+        }finally {
+            if(cursor != null){
+                cursor.close();
+            }
+        }
+
     }
 
     public boolean addDownloadRecord(DownloadBean bean){
