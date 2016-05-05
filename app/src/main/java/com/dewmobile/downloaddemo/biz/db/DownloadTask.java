@@ -176,6 +176,9 @@ public class DownloadTask implements Runnable {
                     downloadInfo.totalSize = downloadInfo.currentSize + connection.getContentLength();
                     InputStream inputStream = connection.getInputStream();
                     bis = new BufferedInputStream(inputStream, BUFFER_SIZE);
+                    if(downloadInfo.currentSize == 0){
+                        new File(tempPath).delete();
+                    }
                     bos = new BufferedOutputStream(new FileOutputStream(new File(tempPath), true), BUFFER_SIZE);
                     int length = 0;
                     long tempBufferedSize = 0;
