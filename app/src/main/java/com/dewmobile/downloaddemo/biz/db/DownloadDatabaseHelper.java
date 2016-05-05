@@ -11,6 +11,9 @@ import android.view.TextureView;
 
 import com.dewmobile.downloaddemo.MyApplication;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by panyongqiang on 16/4/11.
  */
@@ -94,6 +97,25 @@ public class DownloadDatabaseHelper extends SQLiteOpenHelper {
             }
         }
         return null;
+    }
+
+    public List<DownloadBean> queryDownloadList(int status){
+        SQLiteDatabase db = getReadableDatabase();
+        List<DownloadBean> list = new ArrayList<>();
+        Cursor cursor = db.query(downloadTableName, null, COLUMN_STATUS + "=?", new String[]{status+""}, null, null, null);
+        try{
+            if(cursor != null && cursor.getCount() > 0 ){
+                DownloadColumnIndex columnIndex = new DownloadColumnIndex(cursor);
+                while(cursor.moveToNext()){
+                    list.add(new DownloadBean(cursor, columnIndex));
+                }
+            }
+        }finally {
+            if(cursor != null){
+                cursor.close();
+            }
+        }
+        return list;
     }
 
     public boolean queryDownloadPathExist(String path){

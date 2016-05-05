@@ -10,6 +10,8 @@ import com.dewmobile.downloaddemo.biz.db.DownloadDatabaseHelper;
 import com.dewmobile.downloaddemo.biz.db.DownloadInfo;
 import com.dewmobile.downloaddemo.biz.db.DownloadTask;
 
+import java.util.List;
+
 /**
  * Created by panyongqiang on 16/3/31.
  */
@@ -26,6 +28,7 @@ public class DownloadManager {
         threadPoolManager = ThreadPoolManager.getInstance();
         downloadBroadHelper = new DownloadBroadHelper(mContext);
         mDownloadTaskManager = new DownloadTaskManager(mDownloadCallback);
+        autoStartDownload();
     }
 
     public static DownloadManager getInstance(){
@@ -37,6 +40,26 @@ public class DownloadManager {
             }
         }
         return mInstance;
+    }
+
+    private void autoStartDownload(){
+        threadPoolManager.getPreDownloadThreadPool().execute(new Runnable() {
+            @Override
+            public void run() {
+                autoStartDownloadImpl();
+            }
+        });
+    }
+
+    private void autoStartDownloadImpl() {
+        //查询数据库,将处于正在下载中的任务,重启即可
+        List<DownloadBean> beanList = DownloadDatabaseHelper.getInstance().queryDownloadList(DownloadDatabaseHelper.STATUS_DOWNLOADING);
+        if(beanList != null && !beanList.isEmpty()){
+            for(DownloadBean bean : beanList){
+                mDownloadTaskManager.addDownload(new DownloadInfo(bean));
+            }
+        }
+
     }
 
     public void downloadByNormal(String url){

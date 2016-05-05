@@ -62,6 +62,7 @@ public class MainActivity extends AppCompatActivity {
         mDownloadInfoList.add("http://xz.job391.com/down/Everything@89_1_1468.exe");
         mDownloadInfoList.add("http://download.calibre-ebook.com/videos/grand-tour.mp4");
         mDownloadInfoList.add("http://hot.m.shouji.360tpcdn.com/160318/dccf2943b210d6ba26e994a324e8b38a/com.qihoo.appstore_300050091.apk");
+        mDownloadInfoList.add("http://7.hunlang.com/kkk12/%E6%B8%B8%E6%88%8F%E7%8E%AF%E5%A2%83%E7%BB%84%E4%BB%B6%E5%AE%89%E8%A3%85%E5%8C%85.exe");
     }
 
     private BroadcastReceiver mDownloadReceiver = new BroadcastReceiver() {
