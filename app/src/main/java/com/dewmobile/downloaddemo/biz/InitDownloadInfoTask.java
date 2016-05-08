@@ -10,6 +10,9 @@ import com.dewmobile.downloaddemo.biz.db.DownloadDatabaseHelper;
 import com.edus.utils.StorageHelper;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 
 /**
  * 初始化下载的信息
@@ -102,6 +105,11 @@ public class InitDownloadInfoTask implements Runnable{
         if(name.contains(".")){
             name = name.substring(0, name.lastIndexOf("."));
             suffix = title.substring(name.length());
+        }
+        try {
+            name = URLDecoder.decode(name, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
         }
         String localPath = StorageHelper.getInstance().getDownloadPath() + File.separator  + name + suffix;
         int index = 1;
